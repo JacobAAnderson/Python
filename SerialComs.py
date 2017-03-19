@@ -4,67 +4,54 @@ import time
 import serial
 
 
-# Enter location name ----------------
-#name = raw_input("Name: ")
-#print(name)
-
+#print(time.localtime())
 
 # Open the serial port with the line counter ----------------------------------------
-lineCounter = serial.Serial("/dev/ttyUSB0",baudrate = 115200, timeout = 3.0)
-print("Line Counter Port: " + lineCounter.name)
+dataPort = serial.Serial("/dev/ttyUSB0",baudrate = 19200)
+print("Data Port: " + dataPort.name)
 
 
-# Set Line Counter distance ----------------------------------------------------
-
-if raw_input("Set Line counter? y/n") == "y":
-
-    done = 'n'
-    
-    while done == 'n':  # Repeat until set point is correct
-
-        lineCounter.write('s')          # enter set mode
-
-        while not lineCounter.inWaiting():  pass                             # wait for line counter
-        while lineCounter.inWaiting():      print(lineCounter.readline())    # line counter responce [ count, feet, meters ]
-                
-        units = raw_input("Enter Units: ")  # enter responce
-        lineCounter.write(units)            # send responce to the line counter
-
-        while not lineCounter.inWaiting():  pass                            # wait for line counter
-        while lineCounter.inWaiting():      print(lineCounter.readline())   # line counter responce
-
-        number = str(raw_input()) 
-
-        for index in number:    # Send number to line counter one charature at a time and waite for it to echo back
-            lineCounter.write(index)  
-            while not lineCounter.inWaiting():  pass                            # wait for line counter
-            while lineCounter.inWaiting():      print(lineCounter.readline())   # line counter echos charature
-                
-
-        lineCounter.write("\r")  # send carage return to line counter to indicat the end of the number
-        
-        while not lineCounter.inWaiting():  pass                            # wait for line counter
-        while lineCounter.inWaiting():      print(lineCounter.readline())   # line counter responce
-            
-
-        done = str(raw_input("Done? (y/n) "))
-        lineCounter.write(done)
-        # End Line counter set loop --------------------------------------------------------------------
-
-    while not lineCounter.inWaiting():  pass                            # wait for line counter
-    while lineCounter.inWaiting():      print(lineCounter.readline())   # line counter responce
-         
 # Read Line counter --------------------------------------------------
 print("Main loop")
-distance = ""
+data = ""
+
+state = ''
+location = ''
+data = ''
 
 while True:
 
-    
-    if lineCounter.inWaiting():
-        distance = lineCounter.readline()
-        print("\n\nDistance: " + distance)
-        #print(time.localtime())
+    if dataPort.inWaiting():
+        dataRecived = dataPort.readline()
+
+        #print("\nIn Coming Data: " + str(data))
+        #print(data[0:5])
+        
+
+        #ident = bytearray()
+        
+        #for i in data:
+        #    print(data(i))
+        #    if data(i) == bytes(','.encode('utf-8')):
+        #        break
+        #    else:
+        #        pass #ident.extend(data[i])
+
+        
+        #print(str(idnet))
+        
+        if dataRecived[0:5] == bytes('$CARE'.encode('utf-8')):
+            state = str(dataRecived[7:len(dataRecived)-2])
+            print('State: ' + str(dataRecived[7:len(dataRecived)-2]))
+            print(state)
+            
+        elif dataRecived[0:5] == bytes('$GPRM'.encode('utf-8')):
+            location = str(dataRecived[7:len(dataRecived)-2])
+            print('Location: ' + str(dataRecived[7:len(dataRecived)-2]))
+            print(location)
+        else:
+            print("More Data: ")
+        
     
 
     
