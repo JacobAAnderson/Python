@@ -4,17 +4,38 @@
 
 import time
 import serial
+import glob
 
 from tkinter import *
 from tkinter import ttk
 
+# Generate a lost of com-ports ------------------------------------------------------------------------------
+ports = glob.glob('/dev/ttyUSB*')
+
+coms = []
+
+# Check that the port is good -------------------
+for port in ports:
+    try:
+        s = serial.Serial(port)
+        s.close()
+        coms.append(port)
+        print(port)
+            
+    except (OSError , serial.SerialException):
+        pass
+
+ports = tuple(coms)
 
 # Open Serial Poerts ==========================================================================================
-# Open the serial port for ROV data ----------------------------------------
-dataPort = serial.Serial("/dev/ttyUSB1",baudrate = 19200)
-
 # Open the serial port with the line counter ----------------------------------------
-lineCounter = serial.Serial("/dev/ttyUSB0",baudrate = 115200, timeout = 3.0)
+lineCounter = serial.Serial("/dev/ttyUSB0",baudrate = 115200, timeout = 0.3)
+
+# Open the serial port for ROV data ----------------------------------------
+rovData = serial.Serial("/dev/ttyUSB1",baudrate = 19200)
+
+# Open Serial Port to Bob 4 ----------------------------------------------------
+bob4 = serial.Serial('/dev/ttyUSB2', rtscts=True)
 
 
 
@@ -36,86 +57,145 @@ def SetDistance(*args):
     else:
         unit = 'c' 
 
-    while not lineCounter.inWaiting():  pass                            # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))   # line counter responce [ count, feet, meters ]
+    while not lineCounter.inWaiting():  pass                                # wait for line counter
+    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
                 
-    lineCounter.write(bytes(unit.encode('utf-8')))                                             # send responce to the line counter
+    lineCounter.write(bytes(unit.encode('utf-8')))                          # send responce to the line counter
 
-    while not lineCounter.inWaiting():  pass                            # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))   # line counter responce
+    while not lineCounter.inWaiting():  pass                                # wait for line counter
+    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce
 
+    print('here')
     number = setDistance.get()
-    for index in number:                                                # Send number to line counter one charature at a time and waite for it to echo back
+    print(number)
+    for index in number:                        # Send number to line counter one charature at a time and waite for it to echo back
         lineCounter.write(bytes(index.encode('utf-8')))  
-        while not lineCounter.inWaiting():  pass                        # wait for line counter
-        while lineCounter.inWaiting():      print(str(lineCounter.readline()))   # line counter echos charature
+        while not lineCounter.inWaiting():  pass                                # wait for line counter
+        while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter echos charature
                 
 
     lineCounter.write(bytes('\r'.encode('utf-8')))  # send carage return to line counter to indicat the end of the number
         
-    while not lineCounter.inWaiting():  pass                            # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))   # line counter responce
+    while not lineCounter.inWaiting():  pass                                # wait for line counter
+    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce
                 
     lineCounter.write(bytes('y'.encode('utf-8')))
 
-    while not lineCounter.inWaiting():  pass                            # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))   # line counter responce [ count, feet, meters ]
+    while not lineCounter.inWaiting():  pass                                # wait for line counter
+    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
     
     distance.set('Done')
     
-# Read Line counter ----------------------------------------------------------------------------
+# Read Serial Data ----------------------------------------------------------------------------
 def ReadSerial():
-
+    
     # Read Line Counter Data -----------------------------------------------------
     if lineCounter.inWaiting():
-        
+                
         data = lineCounter.readline()
+        lineCounter.flushInput()
+
+        Bobs(ROW2,data[0:len(data)-2]) 
+        
         data2 = str(data[0:len(data)-2])
-        distance.set(data2)
-        print("\n\nDistance: " + data2)
+        distance.set(data2[2:len(data)])
+        print("\n\nDistance: " + distance.get())
+
 
     # Read data from ROV -------------------------------------------------------
-    if dataPort.inWaiting():
-        
-        dataRecived = dataPort.readline()
+    if rovData.inWaiting():
+
+        dataRecived = rovData.readline()
+        rovData.flush()
         
         if dataRecived[0:5] == bytes('$CARE'.encode('utf-8')):
+            
+            Bobs(ROW4, dataRecived[7:len(dataRecived)-2])
+           
             state = str(dataRecived[7:len(dataRecived)-2])
-            imu.set(state)
-            print('State: ' + str(dataRecived[7:len(dataRecived)-2]))   
+            imu.set(state[2:len(state)-1])
+            print('State: ' + imu.get())   
         
         elif dataRecived[0:5] == bytes('$GPRM'.encode('utf-8')):
+            
+            Bobs(ROW3, dataRecived[7:len(dataRecived)-2])
+            
             alt = str(dataRecived[7:len(dataRecived)-2])
-            depth.set(alt)
-            print('Location: ' + str(dataRecived[7:len(dataRecived)-2]))
+            depth.set(alt[2:len(alt)-1])
+            print('Location: ' + depth.get())
                      
         else:
             print("Unexpectd Data: ")
 
         
-
     root.after(100, ReadSerial)
 
-# Name Cameras ------------------------------------------------------------------------------------------
+
+# Write Seial Data to Bobs
+def Bobs(row,data):
+
+    bob4.write(row)
+    bob4.write(CLEARline)
+    bob4.write(data)
+    
+
+# Name Cameras and their serial ports ------------------------------------------------------------------------------------------
 def Name(*args):
+    Bobs(ROW1,bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
     print("Project Name: " + name.get())
 
-def NameCom1(*args):
-    print("com1: " + com1.get())
+    
+def NameCam1(*args):
 
-def NameCom2(*args):
-    print("com2: " + com2.get())
+    bob4.write(ROW1)
+    bob4.write(CLEARline)
+    bob4.write(bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
+    
+    print("com1: " + cam1.get())
+    print("Serail Port: " + comPort1.get())
 
-def NameCom3(*args):
-    print("com3: " + com3.get())
+def NameCam2(*args):
+    print("com2: " + cam2.get())
+    print("Serail Port: " + comPort2.get())
 
-def NameCom4(*args):
-    print("com4: " + com4.get())
+def NameCam3(*args):
+    print("com3: " + cam3.get())
+    print("Serail Port: " + comPort3.get())
+
+def NameCam4(*args):
+    print("com4: " + cam4.get())
+    print("Serail Port: " + comPort4.get())
+
+# Select serial pors for Line counter, ROV and Sonar
+def LineCounterComPort(*args):
+    print("Line Counter Serail Port: " + lcPort.get())
+
+def ROVComPort(*args):
+    print("ROV Serail Port: " + rovPort.get())
+
+def SonarComPort(*args):
+    print("Sonar Serail Port: " + sonarPort.get())
 
 
+# Global variables ------------------------------------------------------------------
+
+# Special Cammande for Bob
+ESC = bytearray.fromhex("1b")
+CSI = bytearray.fromhex("1b 5b")
+CLEAR = CSI+bytes('2J'.encode('utf-8'))
+CLEARline = CSI+bytes('2K'.encode('utf-8'))
+FONT = CSI + bytes('4z'.encode('utf-8'))
+ROW1 = CSI+bytes('0;0H'.encode('utf-8'))
+ROW2 = CSI+bytes('1;0H'.encode('utf-8'))
+ROW3 = CSI+bytes('2;0H'.encode('utf-8'))
+ROW4 = CSI+bytes('3;0H'.encode('utf-8'))
+
+bob4.write(CLEAR)
+bob4.write(FONT)
 
 
-# Set up GUI ===========================================================================================    
+# Set up GUI ================================================================================================    
+# Set up main window and text variables ----------------------------------------------------------------------------------------
 root = Tk()
 root.title("Video Over Lay")
 
@@ -124,82 +204,161 @@ mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
 mainframe.columnconfigure(0, weight=1)
 mainframe.rowconfigure(0, weight=1)
 
-# Global variables ------------------------------------------------------------------
 name = StringVar()
-com1 = StringVar()
-com2 = StringVar()
-com3 = StringVar()
-com4 = StringVar()
+cam1 = StringVar()
+cam2 = StringVar()
+cam3 = StringVar()
+cam4 = StringVar()
+
 distance = StringVar()
 depth = StringVar()
 imu = StringVar()
-
-
-
 setDistance = StringVar()
 units = StringVar()
 
+comPort1 = StringVar()
+comPort2 = StringVar()
+comPort3 = StringVar()
+comPort4 = StringVar()
+lcPort = StringVar()
+rovPort = StringVar()
+sonarPort = StringVar()
 
-# Project Name ---------------------------------------------------------------------------
-name_entry = ttk.Entry(mainframe, width=7, textvariable=name)
-name_entry.grid(column=2, row=1, sticky=(W, E))
-ttk.Label(mainframe, text="Project Name: ").grid(column=1, row=1, sticky=E)
-ttk.Button(mainframe, text="set", command= Name).grid(column=3, row=1, sticky=W)
+# Project Name ------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Project Name: ").grid(column=2, row=1, sticky=E)         # Label
 
+name_entry = ttk.Entry(mainframe, width=7, textvariable=name)                       # Project name entry
+name_entry.grid(column=3, row=1, sticky=(W, E))
 
-# Cameras ---------------------------------------------------------------------------------
-com1_entry = ttk.Entry(mainframe, width=20, textvariable=com1)
-com1_entry.grid(column=2, row=2, sticky=(W, E))
-ttk.Label(mainframe, text="com1:").grid(column=1, row=2, sticky=E)
-ttk.Button(mainframe, text="set", command= NameCom1).grid(column=3, row=2, sticky=W)
+ttk.Button(mainframe, text="set", command= Name).grid(column=4, row=1, sticky=W)    # Set button
+name.set('No Name')
 
-com2_entry = ttk.Entry(mainframe, width=7, textvariable=com2)
-com2_entry.grid(column=2,row=3, sticky=(W,E))
-ttk.Label(mainframe, text="com2:").grid(column=1, row=3, sticky=E)
-ttk.Button(mainframe, text="set", command=NameCom2).grid(column=3, row=3, sticky=W)
+# Cameras --------------------------------------------------------------------------------------------------
+# Cam1 -----------------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Cam1:").grid(column=1, row=2, sticky=E)                      # Label
 
-com3_entry = ttk.Entry(mainframe, width=7, textvariable=com3)
-com3_entry.grid(column=2,row=4, sticky=(W,E))
-ttk.Label(mainframe, text="com3:").grid(column=1, row=4, sticky=E)
-ttk.Button(mainframe, text="set", command=NameCom3).grid(column=3, row=4, sticky=W)
+cam1_port = ttk.Combobox(mainframe, width=10, textvariable=comPort1)                     # Select comport
+cam1_port.grid(column=2, row=2, sticky=(W, E))
+cam1_port['values'] = ports
 
-com4_entry = ttk.Entry(mainframe, width=7, textvariable=com4)
-com4_entry.grid(column=2,row=5, sticky=(W,E))
-ttk.Label(mainframe, text="com4:").grid(column=1, row=5, sticky=E)
-ttk.Button(mainframe, text="set", command=NameCom4).grid(column=3, row=5, sticky=W)
+cam1_name = ttk.Entry(mainframe, width=20, textvariable=cam1)                           # Camera name entry
+cam1_name.grid(column=3, row=2, sticky=(W, E))
 
-# Set Line Counter ----------------------------------------------------------------------------
-lineCounter_entry = ttk.Entry(mainframe, width=7, textvariable=setDistance)
-lineCounter_entry.grid(column=2,row=6, sticky=(W,E))
+ttk.Button(mainframe, text="set", command= NameCam1).grid(column=4, row=2, sticky=W)    # Set button
+cam1.set('No Name')
 
-units_entry = ttk.Combobox(mainframe, width=7, textvariable=units)
-units_entry.grid(column=3, row=6, sticky=(W, E))
-units_entry['values'] = ('Count', 'feet', 'meters')
+# Cam2 ----------------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Cam2:").grid(column=1, row=3, sticky=E)                  # Label
 
-ttk.Button(mainframe, text="set", command=SetDistance).grid(column=4, row=6, sticky=W)
-ttk.Label(mainframe, text="Set Distance:").grid(column=1, row=6, sticky=E)
+cam2_port = ttk.Combobox(mainframe, width=10, textvariable=comPort2)                 # Select comport
+cam2_port.grid(column=2, row=3, sticky=(W, E))
+cam2_port['values'] = ports
 
+cam2_entry = ttk.Entry(mainframe, width=7, textvariable=cam2)                       # Camera name entry
+cam2_entry.grid(column=3,row=3, sticky=(W,E))
 
-# Display Line Counter, Depth, IMU data -------------------------------------------------------------
-ttk.Label(mainframe, text="Line Counter:").grid(column=1, row=7, sticky=E)
-ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=2, row=7, sticky=(W, E))
+ttk.Button(mainframe, text="set", command=NameCam2).grid(column=4, row=3, sticky=W) # Set button
+cam2.set('No Name')
+
+# Cam 3 --------------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Cam3:").grid(column=1, row=4, sticky=E)                  # Label
+
+cam3_port = ttk.Combobox(mainframe, width=10, textvariable=comPort3)                # Select com port
+cam3_port.grid(column=2, row=4, sticky=(W, E))
+cam3_port['values'] = ports
+
+cam3_entry = ttk.Entry(mainframe, width=7, textvariable=cam3)                       # Camera name entry
+cam3_entry.grid(column=3,row=4, sticky=(W,E))
+
+ttk.Button(mainframe, text="set", command=NameCam3).grid(column=4, row=4, sticky=W) # Set button
+cam3.set('No Name')
+
+# Cam 4 -------------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Cam4:").grid(column=1, row=5, sticky=E)                  # Label
+
+cam4_port = ttk.Combobox(mainframe, width=10, textvariable=comPort4)                # Select com port
+cam4_port.grid(column=2, row=5, sticky=(W, E))
+cam4_port['values'] = ports
+
+cam4_entry = ttk.Entry(mainframe, width=7, textvariable=cam4)                       # Camera name entry
+cam4_entry.grid(column=3,row=5, sticky=(W,E))
+
+ttk.Button(mainframe, text="set", command=NameCam4).grid(column=4, row=5, sticky=W) # Set button
+cam4.set('No Name')
+
+# Display Line Counter data ---------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Line Counter:").grid(column=1, row=6, sticky=E)                      # Label
+
+lineCounter_port = ttk.Combobox(mainframe, width=10, textvariable=lcPort)                        # Select com port
+lineCounter_port.grid(column=2, row=6, sticky=(W, E))
+lineCounter_port['values'] = ports
+
+ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=3, row=6, sticky=(W, E))     # Display lincounter data
 distance.set('No Reading')
 
-ttk.Label(mainframe, text="Depth:").grid(column=1, row=8, sticky=E)
-ttk.Label(mainframe, textvariable=depth).grid(column=2, row=8, sticky=(W, E))
+ttk.Button(mainframe, text="set", command=LineCounterComPort).grid(column=4, row=6, sticky=W)          # Set button
+
+# Set Line Counter -------------------------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Set Distance:").grid(column=1, row=7, sticky=E)              # Lable
+
+units_entry = ttk.Combobox(mainframe, width=10, textvariable=units)                     # Select Units to set
+units_entry.grid(column=2, row=7, sticky=(W, E))
+units_entry['values'] = ('Count', 'feet', 'meters')
+
+lineCounter_entry = ttk.Entry(mainframe, width=7, textvariable=setDistance)             # Input the new distance
+lineCounter_entry.grid(column=3,row=7, sticky=(W,E))
+
+ttk.Button(mainframe, text="set", command=SetDistance).grid(column=4, row=7, sticky=W)  # Set button
+
+# Select ROV Com Port --------------------------------------------------------------------
+ttk.Label(mainframe, text="ROV:").grid(column=1, row=8, sticky=E)                       # Label
+
+lineCounter_port = ttk.Combobox(mainframe, width=7, textvariable=rovPort)               # Select com port
+lineCounter_port.grid(column=2, row=8, sticky=(W, E))
+lineCounter_port['values'] = ports
+
+#ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=3, row=8, sticky=(W, E))
+#distance.set('No Reading')
+
+ttk.Button(mainframe, text="set", command=ROVComPort).grid(column=4, row=8, sticky=W)   # Set button
+
+
+# Dispaly depth Data ---------------------------------------------------------------------
+ttk.Label(mainframe, text="Depth:").grid(column=2, row=9, sticky=E)             # Label
+ttk.Label(mainframe, textvariable=depth).grid(column=3, row=9, sticky=(W, E))   # Display data
 depth.set('No Reading')
 
-ttk.Label(mainframe, text="IMU:").grid(column=1, row=9, sticky=E)
-ttk.Label(mainframe, textvariable=imu).grid(column=2, row=9, sticky=(W, E))
+# Display IMU Data -----------------------------------------------------------------------
+ttk.Label(mainframe, text="IMU:").grid(column=2, row=10, sticky=E)              # Label
+ttk.Label(mainframe, textvariable=imu).grid(column=3, row=10, sticky=(W, E))    # Display data
 imu.set('No Reading')
+
+
+# Select Sonar Com Port --------------------------------------------------------------------
+ttk.Label(mainframe, text="Sonar:").grid(column=1, row=11, sticky=E)        # Label
+
+lineCounter_port = ttk.Combobox(mainframe, width=7, textvariable=sonarPort) # Select com port
+lineCounter_port.grid(column=2, row=11, sticky=(W, E))
+lineCounter_port['values'] = ports
+
+#ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=3, row=8, sticky=(W, E))
+#distance.set('No Reading')
+
+ttk.Button(mainframe, text="set", command=SonarComPort).grid(column=4, row=11, sticky=W) # Set button
+
+
 
 # Make it look nice -----------------------------------------------------------------------
 for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5)
 
 
 # Start main loop =========================================================================================
+
 root.after(100, ReadSerial)
 root.mainloop()
 
+
+# Close Serial ports when program is closed
 lineCounter.close()
-dataPort.close()
+rovData.close()
+bob4.close()
