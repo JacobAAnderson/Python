@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Video Overlay Code
 # Sea View
 # March 16th 2017
@@ -9,38 +10,154 @@ import glob
 from tkinter import *
 from tkinter import ttk
 
-# Generate a lost of com-ports ------------------------------------------------------------------------------
-ports = glob.glob('/dev/ttyUSB*')
 
-coms = []
 
-# Check that the port is good -------------------
-for port in ports:
+
+# Define functions =====================================================================================================================
+#=======================================================================================================================================
+#=======================================================================================================================================
+    
+# Assigne serial Ports ---------------------------------------------------------------------------------------------------------
+# Select serial pors for Line counter, ROV and Sonar
+def LineCounterComPort(*args):
+    
+    lineCounter.port = lcPort.get()
+    lineCounter.open()
+    
+    if lineCounter.isOpen():
+        print("Line Counter Serail Port: " + lcPort.get())
+    else:
+        print("Line Counter Serial Port Did Not Open")
+    
+def ROVComPort(*args):
+
+    rovData.port = rovPort.get()
+    rovData.open()
+    
+    if rovData.isOpen():
+        print("ROV Serail Port: " + rovPort.get())
+    else:
+        print("ROV Serial Port Did Not Open")
+    
+
+def SonarComPort(*args):
+    
+    sonarData.port = sonarPort.get()
+    sonarData.open()
+    
+    if sonarData.isOpen():
+        print("Sonar Serail Port: " + sonarPort.get())
+    else:
+        print("Sonar Serial Port Did Not Open")
+
+
+
+def Cam1SerialPort(*args):
+    
+    bob1.port = comPort1.get()
+    bob1.open()
+    
+    if bob1.isOpen():
+        print("Cam1, " +cam1.get()+" Serail Port: " + comPort1.get())
+        bob1.write(CLEAR+FONT+ROW1)
+        #bob1.write(CLEARline)
+        bob1.write(bytes(("Cam1 on " +comPort1.get()).encode('utf-8')))
+        
+    else:
+        print("Cam1," +cam1.get()+ " Serial Port Did Not Open")
+
+    bob1.close()
+
+def Cam2SerialPort(*args):
+    
+    bob2.port = comPort2.get()
+    bob2.open()
+    
+    if bob2.isOpen():
+        print("Cam2, " +cam2.get()+" Serail Port: " + comPort2.get())
+        bob2.write(CLEAR+FONT+ROW1)
+        #bob2.write(CLEARline)
+        bob2.write(bytes(("Cam2 on " +comPort2.get()).encode('utf-8')))
+        
+    else:
+        print("Cam2," +cam2.get()+ " Serial Port Did Not Open")
+
+    bob2.close()
+
+def Cam3SerialPort(*args):
+    
+    bob3.port = comPort3.get()
+    bob3.open()
+    
+    if bob3.isOpen():
+        print("Cam3, " +cam3.get()+" Serail Port: " + comPort3.get())
+        bob3.write(CLEAR+FONT+ROW1)
+        #bob3.write(CLEARline)
+        bob3.write(bytes(("Cam3 on " +comPort3.get()).encode('utf-8')))
+        
+    else:
+        print("Cam3," +cam3.get()+ " Serial Port Did Not Open")
+
+    bob3.close()
+
+def Cam4SerialPort(*args):
+    
+    bob4.port = comPort4.get()
+    bob4.open()
+    
+    if bob4.isOpen():
+        print("Cam4, " +cam4.get()+" Serail Port: " + comPort4.get())
+        bob4.write(CLEAR+FONT+ROW1 + bytes(("Cam4 on " +comPort4.get()).encode('utf-8')))
+        
+    else:
+        print("Cam4," +cam4.get()+ " Serial Port Did Not Open")
+
+    bob4.close()
+
+# Name Cameras and their serial ports ------------------------------------------------------------------------------------------
+
+def Name(*args):
+    Bobs(ROW1,bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
+    print("Project Name: " + name.get())
+
+    
+def NameCam1(*args):
     try:
-        s = serial.Serial(port)
-        s.close()
-        coms.append(port)
-        print(port)
-            
-    except (OSError , serial.SerialException):
-        pass
+        bob1.open()    
+        bob1.write(CLEAR+FONT+ROW1+CLEARline +bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
+        bob1.close()
+        print("cam1: " + cam1.get())
+    except:
+        print("cam1: " + cam1.get() + "Serial Port not Open")
+    
+def NameCam2(*args):
+    try:
+        bob2.open()
+        bob2.write(CLEAR+FONT+ROW1+CLEARline+bytes((cam2.get()+':  '+name.get()).encode('utf-8')))  
+        bob2.close()
+        print("cam2: " + cam2.get())
+    except:
+        print("cam2: " + cam2.get() + "Serial Port not Open")
 
-ports = tuple(coms)
+def NameCam3(*args):
+    try:
+        bob3.open()
+        bob3.write(CLEAR+FONT+ROW1+CLEARline+bytes((cam3.get()+':  '+name.get()).encode('utf-8')))  
+        bob3.close()    
+        print("cam3: " + cam3.get())
+    except:
+      print("cam3: " + cam3.get() + "Serial Port not Open")
 
-# Open Serial Poerts ==========================================================================================
-# Open the serial port with the line counter ----------------------------------------
-lineCounter = serial.Serial("/dev/ttyUSB0",baudrate = 115200, timeout = 0.3)
+def NameCam4(*args):
+    try:
+        bob4.open()
+        bob4.write(CLEAR+FONT+ROW1+CLEARline+bytes((cam4.get()+':  '+name.get()).encode('utf-8')))  
+        bob4.close()     
+        print("cam4: " + cam4.get())
+    except:
+        print("cam4: " + cam4.get() + "Serial Port not Open")
 
-# Open the serial port for ROV data ----------------------------------------
-rovData = serial.Serial("/dev/ttyUSB1",baudrate = 19200)
-
-# Open Serial Port to Bob 4 ----------------------------------------------------
-bob4 = serial.Serial('/dev/ttyUSB2', rtscts=True)
-
-
-
-# Define functions ============================================================================================
-# Set the line counter----------------------------------------------------------------------------------------
+# Set the line counter=======================================================================================================================
 def SetDistance(*args):  
 
     distance.set('Seting Distance')
@@ -86,43 +203,86 @@ def SetDistance(*args):
     
     distance.set('Done')
     
-# Read Serial Data ----------------------------------------------------------------------------
+# Read / write Serial Data =========================================================================================================================
 def ReadSerial():
     
     # Read Line Counter Data -----------------------------------------------------
-    if lineCounter.inWaiting():
-                
-        data = lineCounter.readline()
-        lineCounter.flushInput()
+    if lineCounter.isOpen() and lineCounter.inWaiting():
+        while lineCounter.inWaiting():        
+            data = lineCounter.readline()
+            data = str(data[0:len(data)-2])
+            data = tuple(data[2:len(data)-1].split(","))
+       
+            if data[0] == 'Counts':
+                try:
+                    feet ='Feet: ' + data[3]
+                    meters = 'Meters: ' +data[5]
+                    station = 'Station: ' +data[7]
 
-        Bobs(ROW2,data[0:len(data)-2]) 
+                    Bobs(ROW3,station) 
         
-        data2 = str(data[0:len(data)-2])
-        distance.set(data2[2:len(data)])
-        print("\n\nDistance: " + distance.get())
-
+                    distance.set(feet + '\t' + meters + '\t' + station)
+                    #print("\n\nDistance: " + distance.get())
+                except:
+                    lineCounter.flushInput()
 
     # Read data from ROV -------------------------------------------------------
-    if rovData.inWaiting():
+    if rovData.isOpen() and rovData.inWaiting():
 
-        dataRecived = rovData.readline()
+        data = rovData.readline()
+        data = str(data[0:len(data)-2])
+        data = tuple(data[2:len(data)-1].split(","))
         rovData.flush()
         
-        if dataRecived[0:5] == bytes('$CARE'.encode('utf-8')):
+        if data[0] == '$CMP':  # $CMP for ROV <====> $CAREV for micromoden
+
+            try:
+                heading ='Head: ' + data[1]
+                pitch = 'Pitch: ' +data[2]
+                roll = 'Roll: ' +data[3]
             
-            Bobs(ROW4, dataRecived[7:len(dataRecived)-2])
-           
-            state = str(dataRecived[7:len(dataRecived)-2])
-            imu.set(state[2:len(state)-1])
-            print('State: ' + imu.get())   
+                try:
+                    bob4.open()
+                    bob4.write(ROW2)
+                    bob4.write(CLEARline)
+                    bob4.write(bytes((heading+'  '+pitch+'  '+roll).encode('utf-8')))
+                    bob4.close()
+                except:
+                    pass
+
+                imu.set(heading+'\t'+pitch+'\t'+roll)
+                
+            except:
+                rovData.flush()
+
+                
         
-        elif dataRecived[0:5] == bytes('$GPRM'.encode('utf-8')):
+        elif data[0] == '$ANA':    # $ANA for ROV  <====> $GPRMC for micromoden 
+
+            try:
+                hv = 'Hv: ' +data[1]
+                Depth = 'Depth: '+data[2]
+                v12 = '12v: ' + data[3]
+                leak = 'Leak: ' + data[4]
+
+                depth.set(hv+Depth+v12+leak)
+
+                #Bobs(ROW4,Depth)
+                
+                try:
+                    bob4.open()
+                    bob4.write(ROW1)
+                    bob4.write(CLEARline)
+                    bob4.write(bytes((hv+'  '+Depth+'  '+v12+'  '+leak).encode('utf-8')))
+                    bob4.close()
+                except:
+                    pass
+
+                
+            except:
+               rovData.flush()
             
-            Bobs(ROW3, dataRecived[7:len(dataRecived)-2])
             
-            alt = str(dataRecived[7:len(dataRecived)-2])
-            depth.set(alt[2:len(alt)-1])
-            print('Location: ' + depth.get())
                      
         else:
             print("Unexpectd Data: ")
@@ -130,52 +290,54 @@ def ReadSerial():
         
     root.after(100, ReadSerial)
 
+# Display time =================================================================================
+def TimeKeeping (*args):
+    Bobs(ROW2, time.ctime())
+    root.after(500, TimeKeeping)
 
-# Write Seial Data to Bobs
+
+# Write Seial Data to Bobs ======================================================================
 def Bobs(row,data):
 
-    bob4.write(row)
-    bob4.write(CLEARline)
-    bob4.write(data)
+    if type(data) == bytes:
+        pass
+    elif type(data) == str:
+        data = bytes(data.encode('utf-8'))
+    else:
+        data = bytes(str(data).encode('utf-8'))
     
 
-# Name Cameras and their serial ports ------------------------------------------------------------------------------------------
-def Name(*args):
-    Bobs(ROW1,bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
-    print("Project Name: " + name.get())
+    try:
+        bob1.open()
+        bob1.write(row)
+        bob1.write(CLEARline)
+        bob1.write(data)
+        bob1.close()
+    except:
+        pass
 
+    try:
+        bob2.open()
+        bob2.write(row)
+        bob2.write(CLEARline)
+        bob2.write(data)
+        bob2.close()
+    except:
+        pass
     
-def NameCam1(*args):
-
-    bob4.write(ROW1)
-    bob4.write(CLEARline)
-    bob4.write(bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
+    try:
+        bob3.open()
+        bob3.write(row)
+        bob3.write(CLEARline)
+        bob3.write(data)
+        bob3.close()
+    except:
+        pass
     
-    print("com1: " + cam1.get())
-    print("Serail Port: " + comPort1.get())
 
-def NameCam2(*args):
-    print("com2: " + cam2.get())
-    print("Serail Port: " + comPort2.get())
-
-def NameCam3(*args):
-    print("com3: " + cam3.get())
-    print("Serail Port: " + comPort3.get())
-
-def NameCam4(*args):
-    print("com4: " + cam4.get())
-    print("Serail Port: " + comPort4.get())
-
-# Select serial pors for Line counter, ROV and Sonar
-def LineCounterComPort(*args):
-    print("Line Counter Serail Port: " + lcPort.get())
-
-def ROVComPort(*args):
-    print("ROV Serail Port: " + rovPort.get())
-
-def SonarComPort(*args):
-    print("Sonar Serail Port: " + sonarPort.get())
-
+# ========================================================================================================================================
+# ========================================================================================================================================
+# ========================================================================================================================================
 
 # Global variables ------------------------------------------------------------------
 
@@ -190,9 +352,41 @@ ROW2 = CSI+bytes('1;0H'.encode('utf-8'))
 ROW3 = CSI+bytes('2;0H'.encode('utf-8'))
 ROW4 = CSI+bytes('3;0H'.encode('utf-8'))
 
-bob4.write(CLEAR)
-bob4.write(FONT)
 
+# Generate a lost of com-ports ------------------------------------------------------------------------------
+ports = glob.glob('/dev/tty*')
+
+coms = []
+
+# Check that the port is good -------------------
+print("Serial ports found:")
+for port in ports:
+    try:
+        s = serial.Serial(port)
+        s.close()
+        coms.append(port)
+        print(port)
+            
+    except (OSError , serial.SerialException):
+        pass
+
+ports = tuple(coms)
+
+# Create Serial Poerts ==========================================================================================
+# Create the serial port with the line counter -------------------------------
+lineCounter = serial.Serial(None, baudrate = 115200, timeout = 0.3)
+
+# Create the serial port for ROV data ----------------------------------------
+rovData = serial.Serial(None, baudrate = 115200) # ROV baudrate 115200
+
+# Create the Serial Port for the Sonar ---------------------------------------
+sonarData = serial.Serial(None, baudrate = 4800, timeout = 0.3)
+
+# Create Serial Ports to the Bobs ------------------------------------------------------------------------------
+bob1 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
+bob2 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
+bob3 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
+bob4 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
 
 # Set up GUI ================================================================================================    
 # Set up main window and text variables ----------------------------------------------------------------------------------------
@@ -224,6 +418,11 @@ lcPort = StringVar()
 rovPort = StringVar()
 sonarPort = StringVar()
 
+#=========================================================================================================================================
+#=========================================================================================================================================
+#=========================================================================================================================================
+
+
 # Project Name ------------------------------------------------------------------------------------------
 ttk.Label(mainframe, text="Project Name: ").grid(column=2, row=1, sticky=E)         # Label
 
@@ -240,6 +439,7 @@ ttk.Label(mainframe, text="Cam1:").grid(column=1, row=2, sticky=E)              
 cam1_port = ttk.Combobox(mainframe, width=10, textvariable=comPort1)                     # Select comport
 cam1_port.grid(column=2, row=2, sticky=(W, E))
 cam1_port['values'] = ports
+cam1_port.bind('<<ComboboxSelected>>',Cam1SerialPort)
 
 cam1_name = ttk.Entry(mainframe, width=20, textvariable=cam1)                           # Camera name entry
 cam1_name.grid(column=3, row=2, sticky=(W, E))
@@ -253,6 +453,7 @@ ttk.Label(mainframe, text="Cam2:").grid(column=1, row=3, sticky=E)              
 cam2_port = ttk.Combobox(mainframe, width=10, textvariable=comPort2)                 # Select comport
 cam2_port.grid(column=2, row=3, sticky=(W, E))
 cam2_port['values'] = ports
+cam2_port.bind('<<ComboboxSelected>>',Cam2SerialPort)
 
 cam2_entry = ttk.Entry(mainframe, width=7, textvariable=cam2)                       # Camera name entry
 cam2_entry.grid(column=3,row=3, sticky=(W,E))
@@ -266,6 +467,7 @@ ttk.Label(mainframe, text="Cam3:").grid(column=1, row=4, sticky=E)              
 cam3_port = ttk.Combobox(mainframe, width=10, textvariable=comPort3)                # Select com port
 cam3_port.grid(column=2, row=4, sticky=(W, E))
 cam3_port['values'] = ports
+cam3_port.bind('<<ComboboxSelected>>',Cam3SerialPort)
 
 cam3_entry = ttk.Entry(mainframe, width=7, textvariable=cam3)                       # Camera name entry
 cam3_entry.grid(column=3,row=4, sticky=(W,E))
@@ -274,17 +476,18 @@ ttk.Button(mainframe, text="set", command=NameCam3).grid(column=4, row=4, sticky
 cam3.set('No Name')
 
 # Cam 4 -------------------------------------------------------------------------------------------------
-ttk.Label(mainframe, text="Cam4:").grid(column=1, row=5, sticky=E)                  # Label
+ttk.Label(mainframe, text="Cam4-Pilot:").grid(column=1, row=5, sticky=E)                  # Label
 
 cam4_port = ttk.Combobox(mainframe, width=10, textvariable=comPort4)                # Select com port
 cam4_port.grid(column=2, row=5, sticky=(W, E))
 cam4_port['values'] = ports
+cam4_port.bind('<<ComboboxSelected>>',Cam4SerialPort)
 
 cam4_entry = ttk.Entry(mainframe, width=7, textvariable=cam4)                       # Camera name entry
 cam4_entry.grid(column=3,row=5, sticky=(W,E))
 
 ttk.Button(mainframe, text="set", command=NameCam4).grid(column=4, row=5, sticky=W) # Set button
-cam4.set('No Name')
+cam4.set('Pilot')
 
 # Display Line Counter data ---------------------------------------------------------------------------------------------
 ttk.Label(mainframe, text="Line Counter:").grid(column=1, row=6, sticky=E)                      # Label
@@ -292,11 +495,12 @@ ttk.Label(mainframe, text="Line Counter:").grid(column=1, row=6, sticky=E)      
 lineCounter_port = ttk.Combobox(mainframe, width=10, textvariable=lcPort)                        # Select com port
 lineCounter_port.grid(column=2, row=6, sticky=(W, E))
 lineCounter_port['values'] = ports
+lineCounter_port.bind('<<ComboboxSelected>>',LineCounterComPort)
 
 ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=3, row=6, sticky=(W, E))     # Display lincounter data
 distance.set('No Reading')
 
-ttk.Button(mainframe, text="set", command=LineCounterComPort).grid(column=4, row=6, sticky=W)          # Set button
+#ttk.Button(mainframe, text="set", command=LineCounterComPort).grid(column=4, row=6, sticky=W)          # Set button
 
 # Set Line Counter -------------------------------------------------------------------------------------------------------
 ttk.Label(mainframe, text="Set Distance:").grid(column=1, row=7, sticky=E)              # Lable
@@ -313,14 +517,10 @@ ttk.Button(mainframe, text="set", command=SetDistance).grid(column=4, row=7, sti
 # Select ROV Com Port --------------------------------------------------------------------
 ttk.Label(mainframe, text="ROV:").grid(column=1, row=8, sticky=E)                       # Label
 
-lineCounter_port = ttk.Combobox(mainframe, width=7, textvariable=rovPort)               # Select com port
-lineCounter_port.grid(column=2, row=8, sticky=(W, E))
-lineCounter_port['values'] = ports
-
-#ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=3, row=8, sticky=(W, E))
-#distance.set('No Reading')
-
-ttk.Button(mainframe, text="set", command=ROVComPort).grid(column=4, row=8, sticky=W)   # Set button
+ROV_port = ttk.Combobox(mainframe, width=7, textvariable=rovPort)               # Select com port
+ROV_port.grid(column=2, row=8, sticky=(W, E))
+ROV_port['values'] = ports
+ROV_port.bind('<<ComboboxSelected>>',ROVComPort)
 
 
 # Dispaly depth Data ---------------------------------------------------------------------
@@ -337,12 +537,10 @@ imu.set('No Reading')
 # Select Sonar Com Port --------------------------------------------------------------------
 ttk.Label(mainframe, text="Sonar:").grid(column=1, row=11, sticky=E)        # Label
 
-lineCounter_port = ttk.Combobox(mainframe, width=7, textvariable=sonarPort) # Select com port
-lineCounter_port.grid(column=2, row=11, sticky=(W, E))
-lineCounter_port['values'] = ports
-
-#ttk.Label(mainframe,width = 50, textvariable=distance).grid(column=3, row=8, sticky=(W, E))
-#distance.set('No Reading')
+sonar_port = ttk.Combobox(mainframe, width=7, textvariable=sonarPort) # Select com port
+sonar_port.grid(column=2, row=11, sticky=(W, E))
+sonar_port['values'] = ports
+sonar_port.bind('<<ComboboxSelected>>',SonarComPort)
 
 ttk.Button(mainframe, text="set", command=SonarComPort).grid(column=4, row=11, sticky=W) # Set button
 
@@ -355,10 +553,15 @@ for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5)
 # Start main loop =========================================================================================
 
 root.after(100, ReadSerial)
+root.after(500, TimeKeeping)
 root.mainloop()
 
 
 # Close Serial ports when program is closed
 lineCounter.close()
 rovData.close()
+sonarData.close()
+bob1.close()
+bob2.close()
+bob3.close()
 bob4.close()
