@@ -17,51 +17,87 @@ from tkinter import ttk
 #=======================================================================================================================================
 #=======================================================================================================================================
     
-# Find and assigne serial Ports ========================================================================================================
-# Generate a list of com-ports and recheck every 2 minuts ------------------------------------------------------------------------------
-
+# Find available serial Ports ----------------------------------------------------------------------------------------------------------
 def CheckSerialPorts (*args):
     PORTS = glob.glob('/dev/ttyUSB*') # Get a list of the availalbe USB-serial ports
 
-    coms = []
+    global SerialPorts  # Call serial ports dictionary
+    global ports        # Call serial ports list
 
-    # Check that the port is good -------------------
-    print("Serial ports found:")
+    #coms = []
+
+    # Check that the port is good
     for port in PORTS:
         try:
             s = serial.Serial(port)
             s.close()
-            coms.append(port)
-            #print(port)
+            ports.append(port)
+            #coms.append(port)
+        
+            SerialPorts[port] = None
+
             
         except (OSError , serial.SerialException):
             pass
 
-    global ports
-    ports = coms
+    print SerialPorts
+    print ports
+    #ports = coms
 
-# Select serial pors for Line counter, ROV and Sonar
+
+# Select serial port for Line counter -------------------------------------------------------------------------------------------------
 def LineCounterComPort(*args):
 
     try:
         lineCounter.close() # Make sure the port isn't already open
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
+    
+    if SerialPorts[lcPort.get()] != None:   # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[lcPort.get()].close()
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                print('Select a serial port for the line counter befor setting distance')
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+        SerialPorts[lcPort.get()].port = None
+        
     
     lineCounter.port = lcPort.get() # Assign the serial port to the lineCounter object
     lineCounter.open()
+    
+    SerialPorts[lcPort.get()] = lineCounter
     
     if lineCounter.isOpen():    # Check that the port opens
         print("Line Counter Serail Port: " + lcPort.get())
     else:
         print("Line Counter Serial Port Did Not Open")
-    
+
+
+# Select serial port for ROV -----------------------------------------------------------------------------------------------------------
 def ROVComPort(*args):
 
     try:
         rovData.close() # Make sure the port isn't already open
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
     
     rovData.port = rovPort.get() # Assign the serial port to the rovData object
     rovData.open()
@@ -71,14 +107,19 @@ def ROVComPort(*args):
     else:
         print("ROV Serial Port Did Not Open")
     
-
+# Select serial port for Sonar ---------------------------------------------------------------------------------------------------------
 def SonarComPort(*args):
 
     try:
         sonarData.close()   # Make sure the port isn't already open
-    except:
-        pass
-    
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
+
     sonarData.port = sonarPort.get()    # Assign the serial port to the sonarData object
     sonarData.open()
     
@@ -90,13 +131,18 @@ def SonarComPort(*args):
         print("Sonar Serial Port Did Not Open")
 
 
-
+# Select Serial Port for Camara 1 -------------------------------------------------------------------------------------------------------
 def Cam1SerialPort(*args):
 
     try:
         bob1.port.close()   # Make sure the port isn't already open
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
     
     bob1.port = comPort1.get()  # Assign the serial port to the bob1 object ie.. first Bob4
     bob1.open()
@@ -111,12 +157,19 @@ def Cam1SerialPort(*args):
 
     bob1.close()
 
+
+# Select Serial Port for Camara 2 -------------------------------------------------------------------------------------------------------
 def Cam2SerialPort(*args):
 
     try:
         bob2.port.close()   # Make sure the port isn't already open
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
     
     bob2.port = comPort2.get()  # Assign the serial port to the bob2 object
     bob2.open()
@@ -131,12 +184,19 @@ def Cam2SerialPort(*args):
 
     bob2.close()
 
+
+# Select Serial Port for Camara 3 -------------------------------------------------------------------------------------------------------
 def Cam3SerialPort(*args):
 
     try:
         bob3.port.close()   # Make sure the port isn't already open
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
     
     bob3.port = comPort3.get()  # Assign the serial port to the bob3 object
     bob3.open()
@@ -151,12 +211,19 @@ def Cam3SerialPort(*args):
 
     bob3.close()
 
+
+# Select Serial Port for Camara 4 -------------------------------------------------------------------------------------------------------
 def Cam4SerialPort(*args):
 
     try:
         bob4.port.close()   # Make sure the port isn't already open
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            print('Select a serial port for the line counter befor setting distance')
+        elif str(e) == 'Port is already closed.':
+            pass
+        else:
+            raise
     
     bob4.port = comPort4.get()  # Assign serial port to the bob4 object. This is the Pilot's monitoir
     bob4.open()
@@ -171,13 +238,13 @@ def Cam4SerialPort(*args):
     bob4.close()
 
 
-# Name Cameras and their serial ports ------------------------------------------------------------------------------------------
-
+# Send Project Name to cameras ------------------------------------------------------------------------------------------------------------
 def Name(*args):
     Bobs(ROW1,bytes((cam1.get()+':  '+name.get()).encode('utf-8')))
     print("Project Name: " + name.get())
 
-    
+
+# Assign name to camara 1 ------------------------------------------------------------------------------------------------------------------
 def NameCam1(*args):
     try:
         bob1.open()    
@@ -187,7 +254,9 @@ def NameCam1(*args):
         print("cam1: " + cam1.get())
     except:
         print("cam1: " + cam1.get() + "Serial Port not Open")
-    
+
+
+# Assign name to camara 2 ------------------------------------------------------------------------------------------------------------------
 def NameCam2(*args):
     try:
         bob2.open()
@@ -198,6 +267,8 @@ def NameCam2(*args):
     except:
         print("cam2: " + cam2.get() + "Serial Port not Open")
 
+
+# Assign name to camara 3 ------------------------------------------------------------------------------------------------------------------
 def NameCam3(*args):
     try:
         bob3.open()
@@ -208,6 +279,8 @@ def NameCam3(*args):
     except:
       print("cam3: " + cam3.get() + "Serial Port not Open")
 
+
+# Assign name to camara 4 ------------------------------------------------------------------------------------------------------------------
 def NameCam4(*args):
     try:
         bob4.open()
@@ -218,6 +291,7 @@ def NameCam4(*args):
     except:
         print("cam4: " + cam4.get() + "Serial Port not Open")
 
+
 # Set the line counter=======================================================================================================================
 def SetDistance(*args):  
 
@@ -227,6 +301,7 @@ def SetDistance(*args):
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
             print('Select a serial port for the line counter befor setting distance')
+            break
         elif str(e) == 'Port is already open.':
             pass
         else:
@@ -275,7 +350,8 @@ def SetDistance(*args):
     while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
     
     feet.set('Done')
-    
+
+
 # Read / write Serial Data =========================================================================================================================
 def ReadSerial():
 
@@ -405,6 +481,7 @@ def ReadSerial():
         
     root.after(100, ReadSerial)
 
+
 # Send Data to the Sonar =======================================================================
 def SendToSonar (*args):
 
@@ -418,9 +495,12 @@ def SendToSonar (*args):
 
         #print(data)
         
-    except:
-        pass
-        #print( 'Sonar Data Not sending')
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            pass
+       else:
+            raise
+
 
     root.after(100, SendToSonar)
     
@@ -448,8 +528,11 @@ def Bobs(row,data):
         bob1.write(data)
         bob1.write(CLEARafter)
         bob1.close()
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            pass
+        else:
+            raise
 
     # Write to second Bob4
     try:
@@ -458,8 +541,11 @@ def Bobs(row,data):
         bob2.write(data)
         bob2.write(CLEARafter)
         bob2.close()
-    except:
-        pass
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            pass
+        else:
+            raise
 
     # Write to third Bob4
     try:
@@ -468,9 +554,12 @@ def Bobs(row,data):
         bob3.write(data)
         bob3.write(CLEARafter)
         bob3.close()
-    except:
-        pass
-    
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
+            pass
+        else:
+            raise
+
 
 # ========================================================================================================================================
 # ========================================================================================================================================
@@ -491,6 +580,7 @@ ROW3 = CSI+bytes('2;0H'.encode('utf-8'))        # Move cursor to line 3
 ROW4 = CSI+bytes('3;0H'.encode('utf-8'))        # Move cursor to line 4
 
 
+SerialPorts = {}
 ports = ()
 CheckSerialPorts()
 
