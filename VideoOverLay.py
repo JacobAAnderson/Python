@@ -18,31 +18,25 @@ from tkinter import ttk
 #=======================================================================================================================================
     
 # Find available serial Ports ----------------------------------------------------------------------------------------------------------
-def CheckSerialPorts (*args):
-    PORTS = glob.glob('/dev/ttyUSB*') # Get a list of the availalbe USB-serial ports
+def CheckSerialPorts (*args): pass
+#    PORTS = glob.glob('/dev/ttyUSB*') # Get a list of the availalbe USB-serial ports
 
-    global SerialPorts  # Call serial ports dictionary
-    global ports        # Call serial ports list
-
-    #coms = []
+#    global ports        # Call serial ports list
+    
+#    ports = []
 
     # Check that the port is good
-    for port in PORTS:
-        try:
-            s = serial.Serial(port)
-            s.close()
-            ports.append(port)
-            #coms.append(port)
-        
-            SerialPorts[port] = None
-
+#   for port in PORTS:
+#        try:
+#            s = serial.Serial(port)
+#            s.close()
+#            ports.append(port)
             
-        except (OSError , serial.SerialException):
-            pass
+#        except (OSError , serial.SerialException):
+#            pass
 
-    print SerialPorts
-    print ports
-    #ports = coms
+#    print (SerialPorts)
+#    print(ports)
 
 
 # Select serial port for Line counter -------------------------------------------------------------------------------------------------
@@ -52,36 +46,54 @@ def LineCounterComPort(*args):
         lineCounter.close() # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
+
     
-    if SerialPorts[lcPort.get()] != None:   # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+    if SerialPorts[lcPort.get()] != None:   
 
         print('This port is alreay taken.\nShutting done the exisitng port\n\n')
 
         try:
             SerialPorts[lcPort.get()].close()
+            SerialPorts[lcPort.get()].port = None
         except serial.SerialException as e:
             if str(e) =='Port must be configured before it can be used.':
-                print('Select a serial port for the line counter befor setting distance')
+                print(str(e))
             elif str(e) == 'Port is already closed.':
                 pass
             else:
                 raise
 
-        SerialPorts[lcPort.get()].port = None
-        
+    else:
+        print("Serial port is free")
+
     
     lineCounter.port = lcPort.get() # Assign the serial port to the lineCounter object
     lineCounter.open()
     
-    SerialPorts[lcPort.get()] = lineCounter
+    
     
     if lineCounter.isOpen():    # Check that the port opens
         print("Line Counter Serail Port: " + lcPort.get())
+
+        try:
+            SerialPorts[lcPort.get()] = lineCounter
+        except serial.SerialException as e:
+            print(str(e))
+
     else:
         print("Line Counter Serial Port Did Not Open")
 
@@ -93,17 +105,54 @@ def ROVComPort(*args):
         rovData.close() # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
-    
-    rovData.port = rovPort.get() # Assign the serial port to the rovData object
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
+
+
+   
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+    if SerialPorts[rovPort.get()] != None:   
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[rovPort.get()].close()
+            SerialPorts[rovPort.get()].port = None
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                print(str(e))
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+    else:
+        print("Serial port is free")
+
+
+    # Assign the serial port to the rovData object    
+    rovData.port = rovPort.get() 
     rovData.open()
     
     if rovData.isOpen():    # Make sure the serial port opens
         print("ROV Serail Port: " + rovPort.get())
+
+        try:
+            SerialPorts[rovPort.get()] = rovData
+        except serial.SerialException as e:
+            print(str(e))
+
+        
     else:
         print("ROV Serial Port Did Not Open")
     
@@ -114,19 +163,53 @@ def SonarComPort(*args):
         sonarData.close()   # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
 
-    sonarData.port = sonarPort.get()    # Assign the serial port to the sonarData object
+    
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+    if SerialPorts[sonarPort.get()] != None:   
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[sonarPort.get()].close()
+            SerialPorts[sonarPort.get()].port = None
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                print(str(e))
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+    else:
+        print("Serial port is free")
+
+
+    # Assign the serial port to the sonarData object
+    sonarData.port = sonarPort.get()
     sonarData.open()
     
     if sonarData.isOpen():  # Make sure the serial port opens
-        sonarData.write(bytes('test'.encode('utf-8')))
         sonarData.close()
         print("Sonar Serail Port: " + sonarPort.get())
+
+        try:
+            SerialPorts[sonarPort.get()] = sonarData
+        except serial.SerialException as e:
+            print(str(e))
+
     else:
         print("Sonar Serial Port Did Not Open")
 
@@ -138,12 +221,41 @@ def Cam1SerialPort(*args):
         bob1.port.close()   # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
-    
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
+
+
+
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+    if SerialPorts[comPort1.get()] != None:
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[comPort1.get()].close()
+            SerialPorts[comPort1.get()].port = None
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                pass
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+    else:
+        print("Serial port is free")
+
+
     bob1.port = comPort1.get()  # Assign the serial port to the bob1 object ie.. first Bob4
     bob1.open()
     
@@ -151,6 +263,11 @@ def Cam1SerialPort(*args):
         print("Cam1, " +cam1.get()+" Serail Port: " + comPort1.get())
         bob1.write(CLEAR+FONT+ROW1)
         bob1.write(bytes(("Cam1 on " +comPort1.get()).encode('utf-8')))
+         
+        try:
+            SerialPorts[comPort1.get()] = bob1
+        except serial.SerialException as e:
+            print(str(e))
         
     else:
         print("Cam1," +cam1.get()+ " Serial Port Did Not Open")
@@ -165,11 +282,41 @@ def Cam2SerialPort(*args):
         bob2.port.close()   # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
+
+
+
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+    if SerialPorts[comPort2.get()] != None:   
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[comPort2.get()].close()
+            SerialPorts[comPort2.get()].port = None
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                print(str(e))
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+    else:
+        print("Serial port is free")
+
+
     
     bob2.port = comPort2.get()  # Assign the serial port to the bob2 object
     bob2.open()
@@ -178,6 +325,11 @@ def Cam2SerialPort(*args):
         print("Cam2, " +cam2.get()+" Serail Port: " + comPort2.get())
         bob2.write(CLEAR+FONT+ROW1)
         bob2.write(bytes(("Cam2 on " +comPort2.get()).encode('utf-8')))
+
+        try:
+            SerialPorts[comPort2.get()] = bob2
+        except serial.SerialException as e:
+            print(str(e))
         
     else:
         print("Cam2," +cam2.get()+ " Serial Port Did Not Open")
@@ -192,11 +344,39 @@ def Cam3SerialPort(*args):
         bob3.port.close()   # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
+
+
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+    if SerialPorts[comPort3.get()] != None:   # If anoter device is alredy using this serial port, shut it down and reassign its port to None
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[comPort3.get()].close()
+            SerialPorts[comPort3.get()].port = None
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                print(str(e))
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+    else:
+        print("Serial port is free")
+
     
     bob3.port = comPort3.get()  # Assign the serial port to the bob3 object
     bob3.open()
@@ -205,6 +385,12 @@ def Cam3SerialPort(*args):
         print("Cam3, " +cam3.get()+" Serail Port: " + comPort3.get())
         bob3.write(CLEAR+FONT+ROW1)
         bob3.write(bytes(("Cam3 on " +comPort3.get()).encode('utf-8')))
+
+        try:
+            SerialPorts[comPort3.get()] = bob3
+        except serial.SerialException as e:
+            print(str(e))
+
         
     else:
         print("Cam3," +cam3.get()+ " Serial Port Did Not Open")
@@ -219,18 +405,54 @@ def Cam4SerialPort(*args):
         bob4.port.close()   # Make sure the port isn't already open
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already closed.':
             pass
         else:
             raise
-    
-    bob4.port = comPort4.get()  # Assign serial port to the bob4 object. This is the Pilot's monitoir
+    except AttributeError as e:
+        if str(e) == "'str' object has no attribute 'close'":
+            pass
+        elif str(e) =="'NoneType' object has no attribute 'close'":
+            pass
+        else:
+            raise
+    except:
+        raise
+
+
+
+    # If anoter device is alredy using this serial port, shut it down and reassign its port to None    
+    if SerialPorts[comPort4.get()] != None:   
+
+        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+
+        try:
+            SerialPorts[comPort4.get()].close()
+            SerialPorts[comPort4.get()].port = None
+        except serial.SerialException as e:
+            if str(e) =='Port must be configured before it can be used.':
+                print(str(e))
+            elif str(e) == 'Port is already closed.':
+                pass
+            else:
+                raise
+
+    else:
+        print("Serial port is free")
+
+
+    # Assign serial port to the bob4 object. This is the Pilot's monitoir
+    bob4.port = comPort4.get()  
     bob4.open()
     
     if bob4.isOpen():
         print("Cam4, " +cam4.get()+" Serail Port: " + comPort4.get())
         bob4.write(CLEAR+FONT+ROW1 + bytes(("Cam4 on " +comPort4.get()).encode('utf-8')))
+
+        try:
+            SerialPorts[comPort4.get()] = bob4
+        except serial.SerialException as e:
+            print(str(e))
+
         
     else:
         print("Cam4," +cam4.get()+ " Serial Port Did Not Open")
@@ -301,7 +523,6 @@ def SetDistance(*args):
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
             print('Select a serial port for the line counter befor setting distance')
-            break
         elif str(e) == 'Port is already open.':
             pass
         else:
@@ -366,7 +587,7 @@ def ReadSerial():
         else:
             raise  
     
-    # Read Line Counter Data -----------------------------------------------------
+    # Read Line Counter Data 
     if lineCounter.isOpen() and lineCounter.inWaiting():
 
         data = ()
@@ -404,7 +625,7 @@ def ReadSerial():
 
 
 
-    # Read data from ROV -------------------------------------------------------
+    # Read data from ROV 
 
     # Check that the ROV serial port is opend and raise errors unless the serial port hasn't been configured
     try:
@@ -498,7 +719,7 @@ def SendToSonar (*args):
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
             pass
-       else:
+        else:
             raise
 
 
@@ -580,27 +801,48 @@ ROW3 = CSI+bytes('2;0H'.encode('utf-8'))        # Move cursor to line 3
 ROW4 = CSI+bytes('3;0H'.encode('utf-8'))        # Move cursor to line 4
 
 
-SerialPorts = {}
-ports = ()
-CheckSerialPorts()
 
-# Create Serial Poerts ==========================================================================================
-# Create the serial port with the line counter -------------------------------
+# Create Serial Instances ===============================================================================================================
+# Find available serial ports -----------------------------------------------------------------------------------------------------------
+SerialPorts = {}    # Dictionary that tracks the sertial instances
+ports = []          # List of available USB serial ports
+
+PORTS = glob.glob('/dev/ttyUSB*') # Get a list of the availalbe USB-serial ports
+
+# Check that the port is good
+for port in PORTS:
+    try:
+        s = serial.Serial(port)
+        s.close()
+        ports.append(port)
+        print(port)
+        SerialPorts[port] = None
+
+            
+    except (OSError , serial.SerialException):
+        pass
+
+
+# Create serial instance for the line counter -------------------------------
 lineCounter = serial.Serial(None, baudrate = 115200, timeout = 0.3)
 
-# Create the serial port for ROV data ----------------------------------------
-rovData = serial.Serial(None, baudrate = 115200) # ROV baudrate 115200
+# Create serial instance for for ROV data ----------------------------------------
+rovData = serial.Serial(None, baudrate = 19200) # ROV baudrate 115200
 
-# Create the Serial Port for the Sonar ---------------------------------------
+# Create Serial instance for the Sonar ---------------------------------------
 sonarData = serial.Serial(None, baudrate = 4800, timeout = 0.3)
 
-# Create Serial Ports to the Bobs ------------------------------------------------------------------------------
+# Create Serial instance for the Bobs ------------------------------------------------------------------------------
 bob1 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
 bob2 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
 bob3 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
 bob4 = serial.Serial(None, baudrate = 9600, timeout = 0.3)
 
-# Set up GUI ================================================================================================    
+
+# Set up GUI =======================================================================================================================
+#===================================================================================================================================
+#===================================================================================================================================
+
 # Set up main window and text variables ----------------------------------------------------------------------------------------
 root = Tk()
 root.title("Video Over Lay")
