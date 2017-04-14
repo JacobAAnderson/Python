@@ -10,8 +10,10 @@ import glob
 from tkinter import *
 from tkinter import ttk
 
-
-
+# Settings --------------------------------------------------------------
+sonarUpdateRate = 500       # Update Rate for data transmition to the Sonar
+lineCounterUpdateRate = 500 # Update Rate for the line counter
+rovUpdateRate = 500         # Update Reat for the rov
 
 # Define functions =====================================================================================================================
 #=======================================================================================================================================
@@ -182,7 +184,7 @@ def SetDistance(*args):
 
 
 # Read / write Serial Data =========================================================================================================================
-def ReadSerial():
+def ReadLineCounter():
 
     # Check that the line counter serial port is opend and raise errors unless the serial port hasn't been configured
     try:
@@ -231,10 +233,12 @@ def ReadSerial():
                 print('Flushing line counter serial buffer')
                 lineCounter.flushInput()
 
+    root.after(lineCounterUpdateRate, ReadLineCounter)
 
 
-    # Read data from ROV 
 
+# Read data from ROV ---------------------------------------------------------------------------------------------------------------------------- 
+def RadROV(*args):
     # Check that the ROV serial port is opend and raise errors unless the serial port hasn't been configured
     try:
         rovData.open()
@@ -253,31 +257,8 @@ def ReadSerial():
         data = tuple(data[2:len(data)-1].split(","))
         rovData.flush()
         
-        if data[0] == '$CMP' or data[0] == '$CAREV':  # $CMP for ROV <====> $CAREV for micromoden
-
-            try:
-                heading ='Head: ' + data[1]
-                pitch = 'Pitch: ' +data[2]
-                roll = 'Roll: ' +data[3]
-            
-                try:
-                    bob4.open()
-                    bob4.write(ROW2)
-                    bob4.write(bytes((heading+'  '+pitch+'  '+roll).encode('utf-8')))
-                    bob4.write(CLEARafter)
-                    bob4.close()
-                except:
-                    pass
-
-                imu.set(heading+'\t'+pitch+'\t'+roll)
-                
-            except:
-                print( 'Flush ROV serial buffer')
-                rovData.flush()
-
-                
         
-        elif data[0] == '$ANA' or data[0] == '$GPRMC':    # $ANA for ROV  <====> $GPRMC for micromoden 
+        if data[0] == '$ANA' or data[0] == '$GPRMC':    # $ANA for ROV  <====> $GPRMC for micromoden 
 
             try:
                 hv = 'Hv: ' +data[1]
@@ -303,12 +284,34 @@ def ReadSerial():
                 rovData.flush()
             
             
-                     
+        elif data[0] == '$CMP' or data[0] == '$CAREV':  # $CMP for ROV <====> $CAREV for micromoden
+
+            try:
+                heading ='Head: ' + data[1]
+                pitch = 'Pitch: ' +data[2]
+                roll = 'Roll: ' +data[3]
+            
+                try:
+                    bob4.open()
+                    bob4.write(ROW2)
+                    bob4.write(bytes((heading+'  '+pitch+'  '+roll).encode('utf-8')))
+                    bob4.write(CLEARend)
+                    bob4.close()
+                except:
+                    pass
+
+                imu.set(heading+'\t'+pitch+'\t'+roll)
+                
+            except:
+                print( 'Flush ROV serial buffer')
+                rovData.flush()
+
+                             
         else:
             print("Unexpectd Data: ")
 
         
-    root.after(100, ReadSerial)
+    root.after(rovUpdateRate, RadROV)
 
 
 # Send Data to the Sonar =======================================================================
@@ -321,8 +324,6 @@ def SendToSonar (*args):
         sonarData.open()
         sonarData.write(data.encode('utf-8'))
         sonarData.close()
-
-        #print(data)
         
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
@@ -331,7 +332,7 @@ def SendToSonar (*args):
             raise
 
 
-    root.after(100, SendToSonar)
+    root.after(sonarUpdateRate, SendToSonar)
     
 
 # Display time =================================================================================
@@ -351,7 +352,7 @@ def Bobs(row,data):
         data = bytes(str(data).encode('utf-8'))
 
 
-    bobs = [bob1, bob2, bob3, bob4]
+    bobs = [bob1, bob2, bob3]
 
     for bob in bobs:
         try:
@@ -379,6 +380,7 @@ CSI = bytearray.fromhex("1b 5b")                # Control sequence introducer
 CLEAR = CSI+bytes('2J'.encode('utf-8'))         # Clear the entier screen,
 CLEARline = CSI+bytes('2K'.encode('utf-8'))     # Clear the line that the cursor is on
 CLEARafter = CSI+bytes('0K'.encode('utf-8'))    # Clear from the cursor to the end of the line
+CLEARend = CSI+bytes('0J'.encode('utf-8'))      # Clear from the cursor to the end of the line
 FONT = CSI + bytes('4z'.encode('utf-8'))        # Font style 6X10 --> Smallest font
 ROW1 = CSI+bytes('0;0H'.encode('utf-8'))        # Move cursor to line 1
 ROW2 = CSI+bytes('1;0H'.encode('utf-8'))        # Move cursor to line 2
@@ -606,9 +608,10 @@ for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5)
 
 # Initiate repeted function and Start main loop =========================================================================================
 
-root.after(50, ReadSerial)         # Read Serial Porst every 100 milliseconds
-root.after(75, TimeKeeping)        # Update time twice a second
-root.after(100, SendToSonar)
+root.after( 50, ReadLineCounter)         # Read Serial Porst every 100 milliseconds
+root.after( 75, RadROV)
+root.after(100, TimeKeeping)        # Update time twice a second
+root.after(125, SendToSonar)
 
 root.mainloop()
 
