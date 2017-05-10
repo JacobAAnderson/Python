@@ -15,6 +15,8 @@ sonarUpdateRate = 500       # Update Rate for data transmition to the Sonar
 lineCounterUpdateRate = 500 # Update Rate for the line counter
 rovUpdateRate = 500         # Update Reat for the rov
 
+rovBaud = 115200            # ROV baud rate
+
 # Define functions =====================================================================================================================
 #=======================================================================================================================================
 #=======================================================================================================================================
@@ -38,8 +40,9 @@ def Cam4SerialPort(*args): SetSerialPort(bob4, comPort4.get())
 
 def SetSerialPort(device, port):
 
+    # Make sure the device being assigned to a new serial port is not already open
     try:
-        device.close() # Make sure the port isn't already open
+        device.close() 
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
             pass
@@ -60,7 +63,7 @@ def SetSerialPort(device, port):
     # If anoter device is alredy using this serial port, shut it down and reassign its port to None
     if SerialPorts[port] != None:   
 
-        print('This port is alreay taken.\nShutting done the exisitng port\n\n')
+        print('\n\nThis port is alreay taken.\nShutting done the exisitng port\n')
 
         try:
             SerialPorts[port].close()
@@ -76,25 +79,21 @@ def SetSerialPort(device, port):
     else:
         print("Serial port is free")
 
-    
-    device.port = port # Assign the serial port to the lineCounter object
-    device.open()
-    
-    
-    
-    if device.isOpen():    # Check that the port opens
-        print("Serail Port: " + port)
+    # Assign the serial port to the device
+    device.port = port
 
-        try:
-            SerialPorts[port] = device
-        except serial.SerialException as e:
+
+    # Check that the port opens
+    try: 
+        device.open()
+        print('New serial port will open')
+    except serial.SerialException as e:
+        if str(e) =='Port must be configured before it can be used.':
             print(str(e))
-
-        device.close()
-
+        else:
+            raise
     else:
-        print("Serial Port Did Not Open")
-
+        device.close()
 
 
 # Send Project Name to cameras ------------------------------------------------------------------------------------------------------------
@@ -129,58 +128,61 @@ def SetDistance(*args):
 
     # Check that the line counter serial port is opend and raise errors unless the serial port hasn't been configured
     try:
-        lineCounter.open()
+        lineCounter.open() # Close the line counter serial port to avoid the "Port is alreay open" serial exception below
+    except:
+        pass
+
+    try:
+        lineCounter.isOpen()
     except serial.SerialException as e:
         if str(e) =='Port must be configured before it can be used.':
-            print('Select a serial port for the line counter befor setting distance')
-        elif str(e) == 'Port is already open.':
-            pass
+            print('Please select a serial port for the line counter')
+            root.after(1000, SetDistance)
         else:
             raise  
- 
-
-    feet.set('Seting Distance')
-    print('Seting Distance')
-    
-    lineCounter.write(bytes('s'.encode('utf-8')))
-
-    unit = StringVar()
-    
-    if units.get()  == 'feet':
-        unit = 'f'
-    elif units.get() == 'meters':
-        unit = 'm'
-    else:
-        unit = 'c' 
-
-    while not lineCounter.inWaiting():  pass                                # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
-                
-    lineCounter.write(bytes(unit.encode('utf-8')))                          # send responce to the line counter
-
-    while not lineCounter.inWaiting():  pass                                # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce
-
-    print('here')
-    number = setDistance.get()
-    print(number)
-    for index in number:                        # Send number to line counter one charature at a time and waite for it to echo back
-        lineCounter.write(bytes(index.encode('utf-8')))  
-        while not lineCounter.inWaiting():  pass                                # wait for line counter
-        while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter echos charature
-                
-
-    lineCounter.write(bytes('\r'.encode('utf-8')))  # send carage return to line counter to indicat the end of the number
+    else: 
+        feet.set('Seting Distance')
+        print('Seting Distance')
         
-    while not lineCounter.inWaiting():  pass                                # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce
-                
-    lineCounter.write(bytes('y'.encode('utf-8')))
+        lineCounter.write(bytes('s'.encode('utf-8')))
 
-    while not lineCounter.inWaiting():  pass                                # wait for line counter
-    while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
-    
-    feet.set('Done')
+        unit = StringVar()
+        
+        if units.get()  == 'feet':
+            unit = 'f'
+        elif units.get() == 'meters':
+            unit = 'm'
+        else:
+            unit = 'c' 
+
+        while not lineCounter.inWaiting():  pass                                # wait for line counter
+        while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
+                    
+        lineCounter.write(bytes(unit.encode('utf-8')))                          # send responce to the line counter
+
+        while not lineCounter.inWaiting():  pass                                # wait for line counter
+        while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce
+
+        print('here')
+        number = setDistance.get()
+        print(number)
+        for index in number:                        # Send number to line counter one charature at a time and waite for it to echo back
+            lineCounter.write(bytes(index.encode('utf-8')))  
+            while not lineCounter.inWaiting():  pass                                # wait for line counter
+            while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter echos charature
+                    
+
+        lineCounter.write(bytes('\r'.encode('utf-8')))  # send carage return to line counter to indicat the end of the number
+            
+        while not lineCounter.inWaiting():  pass                                # wait for line counter
+        while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce
+                    
+        lineCounter.write(bytes('y'.encode('utf-8')))
+
+        while not lineCounter.inWaiting():  pass                                # wait for line counter
+        while lineCounter.inWaiting():      print(str(lineCounter.readline()))  # line counter responce [ count, feet, meters ]
+        
+        feet.set('Done')
 
 
 # Read / write Serial Data =========================================================================================================================
@@ -414,7 +416,7 @@ for port in PORTS:
 lineCounter = serial.Serial(None, baudrate = 115200, timeout = 0.3)
 
 # Create serial instance for for ROV data ----------------------------------------
-rovData = serial.Serial(None, baudrate = 19200) # ROV baudrate 115200
+rovData = serial.Serial(None, baudrate = rovBaud)
 
 # Create Serial instance for the Sonar ---------------------------------------
 sonarData = serial.Serial(None, baudrate = 4800, timeout = 0.3)
