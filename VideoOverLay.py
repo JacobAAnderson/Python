@@ -117,9 +117,9 @@ def LableCamera(camera,lable):
         camera.write(CLEAR+FONT+ROW1)
         camera.write(bytes((lable+':  '+name.get()).encode('utf-8')))
         camera.close()
-        print("cam1: " + lable)
+        print("cam: " + lable)
     except:
-        print("cam1: " + lable + "Serial Port not Open")
+        print("cam: " + lable + "Serial Port not Open")
 
 
 
@@ -240,7 +240,7 @@ def ReadLineCounter():
 
 
 # Read data from ROV ---------------------------------------------------------------------------------------------------------------------------- 
-def RadROV(*args):
+def ReadROV(*args):
     # Check that the ROV serial port is opend and raise errors unless the serial port hasn't been configured
     try:
         rovData.open()
@@ -313,7 +313,7 @@ def RadROV(*args):
             print("Unexpectd Data: ")
 
         
-    root.after(rovUpdateRate, RadROV)
+    root.after(rovUpdateRate, ReadROV)
 
 
 # Send Data to the Sonar =======================================================================
@@ -369,6 +369,8 @@ def Bobs(row,data):
             else:
                 raise
 
+# Write flag to a text document
+def LogFlag(*args): print(flag.get())
 
 # ========================================================================================================================================
 # ========================================================================================================================================
@@ -470,6 +472,8 @@ comPort4 = StringVar()
 lcPort = StringVar()
 rovPort = StringVar()
 sonarPort = StringVar()
+
+flag = StringVar()
 
 
 # GUI widgets ============================================================================================================================
@@ -602,6 +606,13 @@ sonar_port.bind('<<ComboboxSelected>>',SonarComPort)
 
 #ttk.Button(mainframe, text="set", command=SonarComPort).grid(column=4, row=15, sticky=W) # Set button
 
+# Flags ----------------------------------------------------------------------------------------
+ttk.Label(mainframe, text="Flags").grid(column=1, row=16, sticky=E)                  # Label
+
+Flag = ttk.Entry(mainframe, width=50, textvariable=flag)                             # Flag entry
+Flag.grid(column=3,row=16, columnspan =2, sticky=W)
+
+ttk.Button(mainframe, text="set", command=LogFlag).grid(column=5, row=16, sticky=W) # Set button
 
 
 # Make it look nice -----------------------------------------------------------------------
@@ -610,9 +621,9 @@ for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5)
 
 # Initiate repeted function and Start main loop =========================================================================================
 
-root.after( 50, ReadLineCounter)         # Read Serial Porst every 100 milliseconds
-root.after( 75, RadROV)
-root.after(100, TimeKeeping)        # Update time twice a second
+root.after( 50, ReadLineCounter)        # Read Serial Porst every 100 milliseconds
+root.after( 75, ReadROV)
+root.after(100, TimeKeeping)            # Update time twice a second
 root.after(125, SendToSonar)
 
 root.mainloop()
